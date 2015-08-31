@@ -763,9 +763,7 @@ FLAC_API FLAC__bool FLAC__stream_decoder_set_metadata_respond_application(FLAC__
 	FLAC__ASSERT(0 != decoder->private_->metadata_filter_ids);
 
 	if(decoder->private_->metadata_filter_ids_count == decoder->private_->metadata_filter_ids_capacity) {
-		void *oldptr = decoder->private_->metadata_filter_ids;
 		if(0 == (decoder->private_->metadata_filter_ids = safe_realloc_mul_2op_(decoder->private_->metadata_filter_ids, decoder->private_->metadata_filter_ids_capacity, /*times*/2))) {
-			free(oldptr);
 			decoder->protected_->state = FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR;
 			return false;
 		}
@@ -824,9 +822,7 @@ FLAC_API FLAC__bool FLAC__stream_decoder_set_metadata_ignore_application(FLAC__S
 	FLAC__ASSERT(0 != decoder->private_->metadata_filter_ids);
 
 	if(decoder->private_->metadata_filter_ids_count == decoder->private_->metadata_filter_ids_capacity) {
-		void *oldptr = decoder->private_->metadata_filter_ids;
 		if(0 == (decoder->private_->metadata_filter_ids = safe_realloc_mul_2op_(decoder->private_->metadata_filter_ids, decoder->private_->metadata_filter_ids_capacity, /*times*/2))) {
-			free(oldptr);
 			decoder->protected_->state = FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR;
 			return false;
 		}
@@ -1660,7 +1656,6 @@ FLAC__bool read_metadata_seektable_(FLAC__StreamDecoder *decoder, FLAC__bool is_
 {
 	FLAC__uint32 i, x;
 	FLAC__uint64 xx;
-	void *oldptr;
 
 	FLAC__ASSERT(FLAC__bitreader_is_consumed_byte_aligned(decoder->private_->input));
 
@@ -1671,9 +1666,7 @@ FLAC__bool read_metadata_seektable_(FLAC__StreamDecoder *decoder, FLAC__bool is_
 	decoder->private_->seek_table.data.seek_table.num_points = length / FLAC__STREAM_METADATA_SEEKPOINT_LENGTH;
 
 	/* use realloc since we may pass through here several times (e.g. after seeking) */
-	oldptr = decoder->private_->seek_table.data.seek_table.points;
 	if(0 == (decoder->private_->seek_table.data.seek_table.points = safe_realloc_mul_2op_(decoder->private_->seek_table.data.seek_table.points, decoder->private_->seek_table.data.seek_table.num_points, /*times*/sizeof(FLAC__StreamMetadata_SeekPoint)))) {
-		free(oldptr);
 		decoder->protected_->state = FLAC__STREAM_DECODER_MEMORY_ALLOCATION_ERROR;
 		return false;
 	}
@@ -2122,7 +2115,7 @@ FLAC__bool read_frame_(FLAC__StreamDecoder *decoder, FLAC__bool *got_a_frame, FL
 #if 1
 						mid = decoder->private_->output[0][i];
 						side = decoder->private_->output[1][i];
-						mid <<= 1;
+						mid = ((uint32_t) mid) << 1;
 						mid |= (side & 1); /* i.e. if 'side' is odd... */
 						decoder->private_->output[0][i] = (mid + side) >> 1;
 						decoder->private_->output[1][i] = (mid - side) >> 1;
@@ -2548,8 +2541,10 @@ FLAC__bool read_subframe_(FLAC__StreamDecoder *decoder, unsigned channel, unsign
 
 	if(wasted_bits && do_full_decode) {
 		x = decoder->private_->frame.subframes[channel].wasted_bits;
-		for(i = 0; i < decoder->private_->frame.header.blocksize; i++)
-			decoder->private_->output[channel][i] <<= x;
+		for(i = 0; i < decoder->private_->frame.header.blocksize; i++) {
+			uint32_t val = decoder->private_->output[channel][i];
+			decoder->private_->output[channel][i] = (val << x);
+		}
 	}
 
 	return true;
