@@ -1,0 +1,11 @@
+cc_library_headers {
+    name: "libFLAC_config",
+    export_include_dirs: ["."],
+}
+
+cc_library_headers {
+    name: "libFLAC_headers",
+    export_include_dirs: ["include"],
+}
+
+subdirs = ["libFLAC"]
