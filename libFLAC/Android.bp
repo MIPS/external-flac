@@ -1,5 +1,6 @@
 cc_library_static {
     name: "libFLAC",
+    vendor_available: true,
 
     srcs: [
         "bitmath.c",
